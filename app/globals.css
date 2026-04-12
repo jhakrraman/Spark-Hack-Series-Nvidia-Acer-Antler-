@@ -1,0 +1,378 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------------------------------------------------------
+ * DECK/01 — terminal-brutalist tactical HUD
+ * Design tokens. Near-black base, hairline borders, tactical amber signal.
+ * ------------------------------------------------------------------ */
+@layer base {
+  :root {
+    /* Base surfaces */
+    --bg:          8 8 10;          /* #08080a — slightly darker so fg pops */
+    --bg-elev:     18 18 20;        /* #121214 */
+    --bg-panel:    22 22 26;        /* #16161a */
+    --fg:          250 250 252;     /* #fafafc — near pure white */
+    --fg-dim:      190 190 196;     /* #bebec4 — brighter body gray */
+    --fg-faint:    120 120 126;     /* #78787e — still muted but readable */
+    --border:      52 52 58;        /* #34343a — more visible hairlines */
+    --border-hi:   96 96 104;       /* #606068 */
+
+    /* Signal colors */
+    --signal:      255 184 28;      /* #ffb81c tactical amber */
+    --signal-dim:  168 119 10;
+    --alert:       108 138 78;      /* #6c8a4e dull military olive — replaces bright red */
+    --alert-dim:   48 66 30;        /* #30421e */
+    --ok:          52 211 153;      /* #34d399 */
+    --ok-dim:      22 89 66;
+
+    /* shadcn compat — remap to our tokens */
+    --background:        240 10% 4%;
+    --foreground:        0 0% 91%;
+    --card:              240 10% 6%;
+    --card-foreground:   0 0% 91%;
+    --popover:           240 10% 6%;
+    --popover-foreground:0 0% 91%;
+    --primary:           40 100% 55%;
+    --primary-foreground:240 10% 4%;
+    --secondary:         240 6% 14%;
+    --secondary-foreground: 0 0% 91%;
+    --muted:             240 6% 14%;
+    --muted-foreground:  0 0% 51%;
+    --accent:            40 100% 55%;
+    --accent-foreground: 240 10% 4%;
+    --destructive:       83 27% 42%;         /* matches --alert dull olive */
+    --destructive-foreground: 0 0% 98%;
+    --border-hsl:        240 6% 16%;
+    --border:            240 6% 16%;
+    --input:             240 6% 16%;
+    --ring:              40 100% 55%;
+    --radius:            0px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: var(--font-mono), ui-monospace, "JetBrains Mono", "IBM Plex Mono", monospace;
+    font-feature-settings: "ss01", "ss02", "cv11", "tnum";
+    font-weight: 500;           /* baseline heavier than default 400 */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Headings punch harder */
+  h1, h2, h3, h4 {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: rgb(var(--signal) / 0.4);
+    color: rgb(var(--bg));
+  }
+}
+
+/* --------------------------------------------------------------------
+ * Global ambient — subtle tactical grid under everything.
+ * ------------------------------------------------------------------ */
+.deck-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+.deck-grid-fine {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+.deck-vignette::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 30%, rgba(255, 184, 28, 0.04), transparent 70%),
+    radial-gradient(ellipse 120% 100% at 50% 100%, rgba(0,0,0,0.6), transparent 60%);
+  z-index: 0;
+}
+
+/* --------------------------------------------------------------------
+ * Panel — flat rectangle with hairline border + corner brackets.
+ * ------------------------------------------------------------------ */
+.deck-panel {
+  position: relative;
+  background: rgb(var(--bg-panel));
+  border: 1px solid rgb(var(--border));
+}
+
+.deck-panel--hi {
+  background: rgb(var(--bg-elev));
+  border-color: rgb(var(--border-hi));
+}
+
+.deck-panel::before,
+.deck-panel::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: rgb(var(--signal));
+  pointer-events: none;
+}
+.deck-panel::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+.deck-panel::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+.deck-brackets {
+  position: relative;
+}
+.deck-brackets > span.bracket-tl,
+.deck-brackets > span.bracket-tr,
+.deck-brackets > span.bracket-bl,
+.deck-brackets > span.bracket-br {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: rgb(var(--signal));
+  pointer-events: none;
+}
+.deck-brackets > span.bracket-tl { top: -1px; left: -1px; border-top: 1px solid; border-left: 1px solid; }
+.deck-brackets > span.bracket-tr { top: -1px; right: -1px; border-top: 1px solid; border-right: 1px solid; }
+.deck-brackets > span.bracket-bl { bottom: -1px; left: -1px; border-bottom: 1px solid; border-left: 1px solid; }
+.deck-brackets > span.bracket-br { bottom: -1px; right: -1px; border-bottom: 1px solid; border-right: 1px solid; }
+
+/* --------------------------------------------------------------------
+ * Typography helpers
+ * ------------------------------------------------------------------ */
+.deck-label {
+  font-size: 11px;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgb(var(--fg-dim));
+}
+.deck-label-hi {
+  font-size: 11px;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgb(var(--signal));
+}
+.deck-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.deck-divider {
+  height: 1px;
+  background: rgb(var(--border));
+}
+.deck-divider-dash {
+  background-image: linear-gradient(90deg, rgb(var(--border)) 50%, transparent 50%);
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+/* --------------------------------------------------------------------
+ * Status dot — glowing pip
+ * ------------------------------------------------------------------ */
+.deck-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor, 0 0 2px currentColor;
+}
+.deck-dot-lg {
+  width: 8px;
+  height: 8px;
+}
+
+/* --------------------------------------------------------------------
+ * Buttons — hard rectangles
+ * ------------------------------------------------------------------ */
+.deck-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(var(--fg));
+  background: rgb(var(--bg-elev));
+  border: 1px solid rgb(var(--border-hi));
+  cursor: pointer;
+  transition: all 120ms linear;
+}
+.deck-btn:hover {
+  border-color: rgb(var(--signal));
+  color: rgb(var(--signal));
+  background: rgb(var(--bg-panel));
+}
+.deck-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.deck-btn--primary {
+  background: rgb(var(--signal));
+  border-color: rgb(var(--signal));
+  color: rgb(var(--bg));
+}
+.deck-btn--primary:hover {
+  background: rgb(var(--fg));
+  border-color: rgb(var(--fg));
+  color: rgb(var(--bg));
+}
+.deck-btn--ghost {
+  background: transparent;
+  border-color: rgb(var(--border));
+}
+
+/* --------------------------------------------------------------------
+ * Input
+ * ------------------------------------------------------------------ */
+.deck-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgb(var(--bg));
+  border: 1px solid rgb(var(--border));
+  color: rgb(var(--fg));
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 120ms linear;
+}
+.deck-input::placeholder {
+  color: rgb(var(--fg-faint));
+  font-weight: 500;
+}
+.deck-input:focus {
+  border-color: rgb(var(--signal));
+}
+
+/* --------------------------------------------------------------------
+ * Scan line overlay for video feeds
+ * ------------------------------------------------------------------ */
+.deck-scanlines {
+  position: relative;
+}
+.deck-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.25) 0px,
+    rgba(0, 0, 0, 0.25) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* --------------------------------------------------------------------
+ * Blink — for live indicators
+ * ------------------------------------------------------------------ */
+@keyframes deck-blink {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.25; }
+}
+.deck-blink {
+  animation: deck-blink 1.4s steps(2, jump-none) infinite;
+}
+
+@keyframes deck-sweep {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+.deck-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgb(var(--signal) / 0.2) 50%, transparent 100%);
+  animation: deck-sweep 3.5s linear infinite;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------
+ * Scrollbar (WebKit)
+ * ------------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-hi));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--signal));
+}
+
+/* Legacy class retained so any old references don't crash */
+.glow-text { text-shadow: 0 0 14px rgb(var(--signal) / 0.6); color: rgb(var(--signal)); }
+.bg-radial-gradient { background: transparent; }
+.animate-blink { animation: deck-blink 1.4s steps(2, jump-none) infinite; }
+
+/* --------------------------------------------------------------------
+ * Leaflet overrides — match the DECK aesthetic
+ * ------------------------------------------------------------------ */
+.leaflet-container {
+  background: rgb(var(--bg)) !important;
+  font-family: var(--font-mono), ui-monospace, monospace !important;
+}
+.leaflet-control-attribution {
+  background: rgba(8, 8, 10, 0.85) !important;
+  color: rgb(var(--fg-faint)) !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  border-left: 1px solid rgb(var(--border)) !important;
+  border-top: 1px solid rgb(var(--border)) !important;
+}
+.leaflet-control-attribution a {
+  color: rgb(var(--fg-dim)) !important;
+}
+.leaflet-control-zoom a {
+  background: rgb(var(--bg-panel)) !important;
+  color: rgb(var(--fg)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: rgb(var(--bg-elev)) !important;
+  color: rgb(var(--signal)) !important;
+  border-color: rgb(var(--signal)) !important;
+}
+.deck-map-marker {
+  background: transparent !important;
+  border: none !important;
+}
