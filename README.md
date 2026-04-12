@@ -6,9 +6,9 @@
 A predictive surveillance intelligence platform for New York City.
 Fuses NYC Open Data through an NVIDIA RAPIDS pipeline, trains a
 per-neighborhood risk forecaster on-device, polls 364 live NYC DOT
-traffic cameras, and runs every frame through a local NVIDIA NIM
-vision model — all on a single **Acer Veriton GN100** (DGX Spark,
-Grace Blackwell GB10, 128 GB unified memory).
+traffic cameras, and runs every frame through an NVIDIA NIM vision
+model — all on a single **Acer Veriton GN100** (DGX Spark, Grace
+Blackwell GB10, 128 GB unified memory).
 
 Nothing leaves the box. No cloud APIs. No compliance risk.
 **Your Code. Your Hardware. Your Edge.**
@@ -128,12 +128,11 @@ export POI_FORCE_CPU=1
 python scripts/bootstrap_data.py
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
-# Next.js with LM Studio
+# Next.js
 cd ..
 npm install
 cp .env.example .env.local
-# Set POI_VLM_BACKEND=lmstudio (default)
-# Start LM Studio with a Gemma 4 or Qwen VL model loaded
+# Set POI_VLM_BACKEND=poi-brain and POI_BRAIN_URL=http://localhost:8080
 npm run dev
 ```
 
@@ -143,13 +142,11 @@ Open `http://localhost:3000`.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `POI_VLM_BACKEND` | `poi-brain` | VLM backend selector: `lmstudio` / `nim` / `poi-brain` |
+| `POI_VLM_BACKEND` | `poi-brain` | VLM backend selector: `nim` / `poi-brain` |
 | `POI_BRAIN_URL` | `http://dgx.tailnet.ts.net:8080` | poi-brain server URL (server-side) |
 | `NEXT_PUBLIC_POI_BRAIN_URL` | `http://dgx.tailnet.ts.net:8080` | poi-brain URL (client-side hooks) |
 | `NIM_BASE_URL` | `http://dgx.tailnet.ts.net:8000/v1` | NVIDIA NIM endpoint (direct mode) |
 | `NIM_MODEL` | `meta/llama-3.2-11b-vision-instruct` | NIM model ID |
-| `LMSTUDIO_BASE_URL` | `http://localhost:1234/v1` | Local LM Studio endpoint (fallback) |
-| `LMSTUDIO_MODEL` | `google/gemma-4-26b-a4b` | LM Studio model ID |
 | `OPENAI_API_KEY` | — | Optional: chat assistant + stats summary |
 | `RESEND_API_KEY` | — | Optional: email alerts |
 | `ALERT_EMAIL_TO` | — | Optional: alert recipients |
@@ -204,7 +201,7 @@ app/
     send-email/                      # alerts (Resend, optional)
 
 lib/
-  vlm/                               # pluggable VLM clients (lmstudio/nim/poi-brain)
+  vlm/                               # pluggable VLM clients (nim/poi-brain)
   risk/                              # risk tier + API client
   hooks/                             # React hooks for poi-brain SSE/REST
   nyctmc.ts                          # NYC TMC camera catalog

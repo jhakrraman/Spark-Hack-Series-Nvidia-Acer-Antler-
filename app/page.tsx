@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 const BOOT_LINES = [
-  "[ok] acquiring inference backend .................. lm-studio@127.0.0.1:1234",
-  "[ok] loading vlm weights ........................... google/gemma-4-26b-a4b",
+  "[ok] acquiring inference backend .................. nvidia-nim@dgx.local:8000",
+  "[ok] loading vlm weights ........................... llama-3.2-11b-vision",
   "[ok] vision ...................................... enabled",
-  "[ok] json_schema mode ........................... enabled (reasoning=off)",
+  "[ok] structured output ........................... json_schema enabled",
   "[ok] nyctmc feed catalog ........................ 900+ cameras reachable",
   "[ok] detection schedulers ......................... armed",
   "[ok] local-first — no frames leave this device",

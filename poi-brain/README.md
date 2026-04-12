@@ -222,8 +222,8 @@ scp ~/.poi/models/risk_model.pt dgx:/data/poi/models/risk_model.pt
 - **NIM is NVIDIA-only.** On Mac the camera poller will log errors hitting
   NIM — that's expected. The risk pipeline still works without NIM (you
   get the heatmap, per-camera risk, SSE stream, cuOpt routes). Optionally
-  point `NIM_BASE_URL` at a local LM Studio or vLLM server running Gemma
-  to get frame analysis working locally.
+  point `NIM_BASE_URL` at a local vLLM server to get frame analysis
+  working locally.
 - **For the hackathon demo, the DGX should use `cuml-xgb`, not torch.** The
   RAPIDS pitch is a scoring criterion. Torch on MPS is for dev iteration.
 - The default data root is `/data/poi/` which is read-only on Mac. Config

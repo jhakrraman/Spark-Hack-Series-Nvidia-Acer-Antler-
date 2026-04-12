@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     nim_api_key: str = "nim"
     nim_warmup_on_startup: bool = True
 
-    # LM Studio fallback
+    # Local OpenAI-compatible fallback (dev only)
     lmstudio_base_url: str = "http://localhost:1234/v1"
     lmstudio_model: str = "google/gemma-4-26b-a4b"
     vlm_backend: str = "nim"

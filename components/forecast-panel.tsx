@@ -37,7 +37,7 @@ export function ForecastPanel({ stats, vlmBackend }: ForecastPanelProps) {
       <Divider />
       <Stat
         label="VLM"
-        value={(vlmBackend ?? "lmstudio").toUpperCase()}
+        value={(vlmBackend ?? "nim").toUpperCase()}
         color="#a3e635"
       />
       <Divider />

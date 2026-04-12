@@ -8,7 +8,7 @@ boroughs with live-updating JPEG snapshot URLs.
 We fetch at startup, filter to online cameras in the boroughs we care about,
 tag each with an H3 res-9 cell, and return them. The result feeds both the
 mission-control dashboard's camera-pin overlay and the camera poller that
-pipes frames into the NIM/LM Studio VLM.
+pipes frames into the NIM VLM.
 
 Fallback chain:
 1. Live HTTP fetch from webcams.nyctmc.org (primary)

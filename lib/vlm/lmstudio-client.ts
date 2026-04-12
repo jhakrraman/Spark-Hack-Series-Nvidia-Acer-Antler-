@@ -16,7 +16,7 @@ const LMSTUDIO_MODEL =
 
 const lmstudio = new OpenAI({
   baseURL: LMSTUDIO_BASE_URL,
-  apiKey: process.env.LMSTUDIO_API_KEY ?? "lm-studio",
+  apiKey: process.env.LMSTUDIO_API_KEY ?? "local",
 });
 
 async function analyzeFrame(

@@ -2,7 +2,7 @@
 
 QLoRA fine-tuning pipeline that adapts Qwen2.5-VL or Qwen3-VL to the
 Person of Interest detection schema. The trained adapter drops into the
-existing NIM / LM Studio inference path with zero schema changes.
+existing NIM inference path with zero schema changes.
 
 ## Quick start
 
@@ -105,7 +105,6 @@ The script auto-detects the best available accelerator:
 
 ## After training
 
-Load the fine-tuned adapter in LM Studio by pointing at the merged
-model directory, or serve it via vLLM / SGLang / NIM with the adapter
+Serve the fine-tuned model via vLLM, SGLang, or NIM with the adapter
 path. The detection schema is identical to the base model — no
 frontend or backend changes required.
