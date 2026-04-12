@@ -1,69 +1,139 @@
 # Person of Interest — DECK/01
 
-A local-inference tactical HUD for live NYC infrastructure.
+> **Spark Hack Series — New York** · Human Impact Challenge
+> Presented by NVIDIA · Acer · Antler · April 10–12, 2026
 
-DECK/01 watches the public NYC Traffic Management Center camera catalog
-(hundreds of feeds) and runs every frame through a **local** Gemma 4
-vision-language model served by LM Studio. Nothing leaves the machine.
-No API bills. No rate limits. No external inference hops.
+A predictive surveillance intelligence platform for New York City.
+Fuses NYC Open Data through an NVIDIA RAPIDS pipeline, trains a
+per-neighborhood risk forecaster on-device, polls 364 live NYC DOT
+traffic cameras, and runs every frame through a local NVIDIA NIM
+vision model — all on a single **Acer Veriton GN100** (DGX Spark,
+Grace Blackwell GB10, 128 GB unified memory).
+
+Nothing leaves the box. No cloud APIs. No compliance risk.
+**Your Code. Your Hardware. Your Edge.**
+
+## Challenge track: Human Impact
+
+> *Improvements in health, safety, and economic opportunity for residents.*
+
+Person of Interest addresses the safety dimension. NYC already publishes
+the data — NYPD complaints, Vision Zero collisions, 311 street-condition
+reports, and hundreds of live camera feeds. What the city lacks is a
+system that fuses all of it in real time and tells you where trouble is
+forming *before* it happens. That's what this builds.
 
 ## What it does
 
-- **Map tab** — every NYC TMC camera with known coordinates rendered as
-  a tactical marker over a dark basemap. Click any marker to pull the
-  live still and run on-device inference.
-- **NYC deck tab** — sortable catalog with operator notes, inline
-  analysis, and a structured detection stream.
-- **Realtime tab** — browser webcam or uploaded MP4 → local Gemma 4
-  frame detection with pose keypoints, event timeline, and a chat
-  assistant fed the detection stream.
-- **Grid dashboard** — tactical overview of every registered camera
-  with an event log sidebar.
-- **Statistics tab** — charts over historical key-moment data, plus an
-  LLM summary of notable patterns.
+### Mission Control (`/protected`)
+Fullscreen MapLibre heatmap rendering H3 resolution-9 hex cells (~150 m)
+colored by predicted 15-minute risk scores. Time-of-week slider for
+dynamic forecasting, category picker for hazard filtering, top-risk
+camera watch list, NVIDIA stack status pills (NIM · cuDF · cuSpatial ·
+cuML · cuOpt), and live SSE risk streaming.
 
-## Stack
+### Camera Map (`/pages/map`)
+Leaflet-based tactical map with 364 amber markers over Carto Dark Matter
+tiles. Click any marker to pull the live JPEG snapshot and run on-device
+VLM analysis. Side panel shows the detection stream.
 
-- **Next.js 15 / App Router** · React 19 · TypeScript · Tailwind CSS
-- **LM Studio** running `google/gemma-4-26b-a4b` (or any vision-capable
-  model) via an OpenAI-compatible endpoint at `http://localhost:1234/v1`
-- **JSON Schema** structured output for deterministic detections and
-  zero reasoning-token overhead on Gemma 4
-- **Leaflet + react-leaflet** with Carto Dark Matter tiles for the map
-- **Chart.js** for the statistics page
-- **Resend** for alert emails (optional)
+### NYC TMC Catalog (`/pages/nyctmc`)
+Searchable 3-column catalog of NYC DOT cameras with operator notes,
+inline frame analysis, and structured event output.
+
+### Realtime Stream (`/pages/realtimeStreamPage`)
+Browser webcam capture with TensorFlow.js pose detection, per-frame VLM
+analysis, timestamped key-moments timeline, and a chat assistant.
+
+### Dispatch (`/pages/dispatch`)
+Patrol-route visualization powered by NVIDIA cuOpt VRP solver.
+
+### Statistics (`/pages/statistics`)
+Historical key-moment charts with LLM-generated summaries.
+
+## NVIDIA stack
+
+| Library | Used for |
+|---|---|
+| **NIM** | Llama 3.2 11B Vision container for frame analysis (OpenAI-compatible) |
+| **cuDF** | GPU dataframe fusion of NYPD + Vision Zero + 311 on H3 cells |
+| **cuSpatial / H3** | H3 resolution-9 spatial binning, ~30K hex cells across five boroughs |
+| **cuML (XGBoost)** | Binary risk classifier per hex cell × 15-minute window |
+| **cuGraph** | Incident co-occurrence PageRank (stretch) |
+| **cuOpt** | Patrol-route VRP over the live heatmap (stretch) |
+
+On CUDA machines the full RAPIDS path runs. On laptops (no CUDA) the
+code transparently falls back to pandas + sklearn + networkx.
 
 ## Architecture
 
 ```
-┌─────────────────┐   ┌────────────────────┐   ┌──────────────────┐
-│  webcams.nyctmc │──►│ /api/nyctmc/*      │──►│  lib/lmstudio.ts │
-│  .org/api       │   │  cameras | analyze │   │  (Gemma 4 VLM)   │
-│  ~900 feeds     │   └────────────────────┘   └──────────────────┘
-└─────────────────┘                                      ▲
-                                                         │
-       ┌─────────────────────────────────────────────────┘
-       │
-┌──────┴───────────────────────────────────────────────────┐
-│               Next.js App Router UI                       │
-│   /pages/map   /pages/nyctmc   /pages/realtimeStreamPage  │
-│   /protected   /pages/statistics   /pages/upload          │
-└───────────────────────────────────────────────────────────┘
+NYC Open Data (SODA)              NYC DOT Traffic Cams (364)
+      │                                     │
+      ▼                                     ▼
+  ingest.py → parquet              camera_poller.py (JPEG every 3s)
+      │                                     │
+      ▼                                     │
+  fuse_cudf.py (H3 res 9)                  │
+      │                                     │
+      ▼                                     ▼
+  train_cuml.py (XGBoost)          NIM Llama 3.2 Vision (local)
+      │                                     │
+      ▼                                     ▼
+  risk_engine.py ────────► /risk/heatmap   /frames/analyze
+      │
+      ▼
+  Next.js Mission Control (MapLibre + H3)
 ```
+
+**Hardware:** Acer Veriton GN100 — NVIDIA GB10 Grace Blackwell Superchip,
+128 GB unified memory. The parquet cache, cuDF frame, cuML model, NIM
+vision weights, and live frame buffers all coexist in the same address
+space. One box, no swapping.
 
 ## Running it
 
-**Prereqs**
-
-1. Node 18+ and `npm`
-2. [LM Studio](https://lmstudio.ai) with a vision-capable Gemma 4 model
-   loaded and the developer server started (default: `http://localhost:1234`)
-
-**Setup**
+### Option A — Full stack (DGX Spark / GN100)
 
 ```bash
+# 1. Start NVIDIA NIM container
+docker run -d --name poi-nim --gpus all --shm-size=16g \
+    -e NGC_API_KEY -p 8000:8000 \
+    nvcr.io/nim/meta/llama-3.2-11b-vision-instruct:latest
+
+# 2. Start poi-brain
+cd poi-brain
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-cpu.txt
+pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12 cuml-cu12 cuspatial-cu12
+python scripts/bootstrap_data.py          # pulls NYC Open Data + trains model
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# 3. Start the dashboard
+cd ..
 npm install
-cp .env.example .env.local     # adjust LMSTUDIO_MODEL if needed
+cp .env.example .env.local
+# Set POI_VLM_BACKEND=poi-brain and POI_BRAIN_URL=http://localhost:8080
+npm run dev
+```
+
+### Option B — Local dev (MacBook / no CUDA)
+
+```bash
+# poi-brain with CPU fallback
+cd poi-brain
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements-cpu.txt
+export POI_FORCE_CPU=1
+python scripts/bootstrap_data.py
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+# Next.js with LM Studio
+cd ..
+npm install
+cp .env.example .env.local
+# Set POI_VLM_BACKEND=lmstudio (default)
+# Start LM Studio with a Gemma 4 or Qwen VL model loaded
 npm run dev
 ```
 
@@ -71,77 +141,121 @@ Open `http://localhost:3000`.
 
 ## Environment variables
 
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `LMSTUDIO_BASE_URL` | no | `http://localhost:1234/v1` | Local LM Studio OpenAI-compatible endpoint |
-| `LMSTUDIO_MODEL` | no | `google/gemma-4-26b-a4b` | Must match an `id` returned by `GET /v1/models` |
-| `LMSTUDIO_API_KEY` | no | `lm-studio` | LM Studio ignores this; any non-empty string works |
-| `OPENAI_API_KEY` | no | — | Only used by the optional chat assistant (`/api/chat`) and summary (`/api/summary`) routes |
-| `RESEND_API_KEY` | no | — | Required only if you want email alerts |
-| `ALERT_EMAIL_TO` | no | — | Comma-separated recipient list for alert emails |
-| `ALERT_EMAIL_FROM` | no | `DECK/01 <onboarding@resend.dev>` | Alert email `from` header |
+| Variable | Default | Purpose |
+|---|---|---|
+| `POI_VLM_BACKEND` | `poi-brain` | VLM backend selector: `lmstudio` / `nim` / `poi-brain` |
+| `POI_BRAIN_URL` | `http://dgx.tailnet.ts.net:8080` | poi-brain server URL (server-side) |
+| `NEXT_PUBLIC_POI_BRAIN_URL` | `http://dgx.tailnet.ts.net:8080` | poi-brain URL (client-side hooks) |
+| `NIM_BASE_URL` | `http://dgx.tailnet.ts.net:8000/v1` | NVIDIA NIM endpoint (direct mode) |
+| `NIM_MODEL` | `meta/llama-3.2-11b-vision-instruct` | NIM model ID |
+| `LMSTUDIO_BASE_URL` | `http://localhost:1234/v1` | Local LM Studio endpoint (fallback) |
+| `LMSTUDIO_MODEL` | `google/gemma-4-26b-a4b` | LM Studio model ID |
+| `OPENAI_API_KEY` | — | Optional: chat assistant + stats summary |
+| `RESEND_API_KEY` | — | Optional: email alerts |
+| `ALERT_EMAIL_TO` | — | Optional: alert recipients |
 
-## Layout
+## Fine-tuning Qwen VL
+
+A QLoRA fine-tuning pipeline is included at `poi-brain/finetune/` for
+adapting Qwen2.5-VL or Qwen3-VL to the POI detection schema. The
+trained adapter is a drop-in replacement — same FrameEvent JSON output,
+zero frontend changes.
+
+```bash
+cd poi-brain/finetune
+pip install -r requirements.txt
+
+# Prepare data from existing annotations
+python prepare_dataset.py \
+    --from-bounding-boxes ../../public/bounding_boxes \
+    --output ./train.jsonl
+
+# Train (7B fits in 24 GB with QLoRA 4-bit)
+python train_qwen_vl.py \
+    --model-name Qwen/Qwen2.5-VL-7B-Instruct \
+    --dataset ./train.jsonl \
+    --output-dir ./adapter_out
+```
+
+See [`poi-brain/finetune/README.md`](poi-brain/finetune/README.md) for
+supported models, VRAM requirements, and all training arguments.
+
+## Project layout
 
 ```
 app/
-  layout.tsx                       # app shell, status strip, nav, footer
-  page.tsx                         # landing (boot screen + CTAs)
-  globals.css                      # DECK/01 design tokens + utilities
-  protected/page.tsx               # tactical camera grid dashboard
+  layout.tsx                         # app shell with status strip + nav
+  page.tsx                           # boot-screen landing page
+  globals.css                        # DECK/01 design tokens
+  protected/page.tsx                 # Mission Control (fullscreen heatmap)
   pages/
-    map/page.tsx                   # Leaflet-based NYC camera map
-    nyctmc/page.tsx                # NYC TMC catalog + analysis
-    realtimeStreamPage/page.tsx    # live browser capture + inference
-    upload/page.tsx                # MP4 upload + inference
-    saved-videos/page.tsx          # saved library
-    statistics/page.tsx            # charts + LLM summary
-    video/[id]/page.tsx            # single-video deep dive
+    map/                             # Leaflet camera map
+    nyctmc/                          # NYC TMC catalog + analysis
+    dispatch/                        # cuOpt patrol routes
+    realtimeStreamPage/              # live browser capture
+    upload/                          # MP4 upload + analysis
+    saved-videos/                    # saved library
+    statistics/                      # charts + LLM summary
   api/
-    nyctmc/cameras/route.ts        # proxy to NYC TMC camera catalog
-    nyctmc/analyze/route.ts        # frame → local VLM
-    chat/route.ts                  # assistant chat (OpenAI, optional)
-    summary/route.ts               # stats summary (OpenAI, optional)
-    send-email/route.ts            # Resend alerts (optional)
+    nyctmc/{cameras,analyze}/        # NYC TMC proxy + VLM
+    risk/{heatmap,cameras,stats,..}/ # poi-brain proxy routes
+    chat/                            # assistant (OpenAI, optional)
+    summary/                         # stats summary (OpenAI, optional)
+    send-email/                      # alerts (Resend, optional)
+
 lib/
-  lmstudio.ts                      # shared LM Studio client + frame schema
-  nyctmc.ts                        # NYC TMC fetch + normalization
-  data.ts                          # demo camera + event mock data
+  vlm/                               # pluggable VLM clients (lmstudio/nim/poi-brain)
+  risk/                              # risk tier + API client
+  hooks/                             # React hooks for poi-brain SSE/REST
+  nyctmc.ts                          # NYC TMC camera catalog
+  data.ts                            # demo mock data
+
 components/
-  nyc-map.tsx                      # Leaflet wrapper (dynamic-imported)
-  camera-feed.tsx                  # looping video tile for the dashboard
-  camera-modal.tsx                 # full-screen camera viewer
-  event-feed.tsx                   # recent-incident sidebar
-  timestamp-list.tsx               # keymoment list
-  chat-interface.tsx               # assistant chat widget
-  stats-overview.tsx               # dashboard metric tiles
-  header-nav.tsx                   # primary nav with numbered codes
-  header-auth.tsx                  # operator badge
-  home-link.tsx                    # DECK/01 wordmark
+  risk-heatmap-map.tsx               # MapLibre H3 heatmap (313 lines)
+  nyc-map.tsx                        # Leaflet tactical map
+  camera-popup.tsx                   # camera click popup
+  camera-float.tsx                   # watch-list sidebar cards
+  forecast-panel.tsx                 # top-strip forecast numbers
+  time-slider.tsx                    # time-of-week scrubber
+  category-picker.tsx                # hazard category filter
+  risk-badge.tsx                     # risk tier pill
+
+poi-brain/
+  app/main.py                        # FastAPI entrypoint
+  app/pipeline/                      # RAPIDS data pipeline
+    ingest.py → fuse_cudf.py → train_cuml.py → risk_engine.py
+    camera_catalog.py, camera_poller.py
+    solve_cuopt.py, graph_cugraph.py
+    device_probe.py, categories.py
+  app/vlm/nim_client.py              # NVIDIA NIM vision client
+  app/routers/                       # HTTP + SSE endpoints
+  finetune/                          # Qwen VL QLoRA fine-tuning
+    train_qwen_vl.py, prepare_dataset.py
 ```
 
 ## Design
 
-The UI is a terminal-brutalist tactical HUD:
+Terminal-brutalist tactical HUD built for a dark control-room context:
 
-- **Monospace** (JetBrains Mono) for everything except long prose
+- **JetBrains Mono 500–800** for all UI; Inter for long prose
 - **Hard rectangles** with amber corner brackets — zero border-radius
-- **Monochrome + one signal color** — near-black base, off-white
-  foreground, tactical amber `#ffb81c` for active state, dull military
-  olive `#6c8a4e` for alerts, mint green for OK status
-- **Subtle scan lines** on video containers
-- **Tabular numerals** and ASCII markers (`▲`, `■`, `//`, `[01/200]`)
-  everywhere data lives
-- **Dark Leaflet tiles** (Carto Dark Matter) so the map blends into the
-  page chrome
+- **Monochrome + amber signal** — near-black `#08080a` base, `#fafafc`
+  foreground, tactical amber `#ffb81c`, military olive `#6c8a4e` for
+  alerts, mint `#34d399` for OK
+- **Scan-line overlays** on video containers, tactical grid background
+- **Tabular numerals** and ASCII markers everywhere data lives
 
-## Notes
+## Data sources (all public, all NYC)
 
-- All inference runs locally. No frames are uploaded anywhere.
-- The optional `/api/chat` and `/api/summary` routes still call the
-  OpenAI API for the conversational assistant and the stats summary —
-  you can swap them to hit `lib/lmstudio.ts` instead if you prefer
-  zero cloud dependencies.
-- Geographic coordinates on the NYC TMC feed are inconsistent upstream;
-  the map page shows a `LOCATABLE / TOTAL` counter so you can see the
-  split at a glance.
+| Source | What | Endpoint |
+|---|---|---|
+| NYC Open Data (SODA) | NYPD complaints, Vision Zero crashes, 311 reports | `data.cityofnewyork.us` |
+| NYC DOT TMC | 364 live traffic camera JPEG streams | `webcams.nyctmc.org/api` |
+| NWS | Central Park weather observations | `api.weather.gov` |
+
+## Privacy
+
+All inference is local. Camera frames never leave the GN100. The only
+outbound traffic is to SODA (historical CSV pulls, one-shot) and
+`webcams.nyctmc.org` (public JPEG snapshots). No PII is stored,
+transmitted, or used for training.
