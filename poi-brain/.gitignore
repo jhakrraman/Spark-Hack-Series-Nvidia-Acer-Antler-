@@ -1,0 +1,44 @@
+# poi-brain — regeneratable artifacts. All of this is rebuilt from
+# requirements-cpu.txt + scripts/bootstrap_data.py.
+
+# Python bytecode + caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs
+.venv/
+.venv-*/
+venv/
+env/
+
+# Package metadata
+*.egg-info/
+*.egg
+build/
+dist/
+
+# Env (the example is tracked; the real one is not)
+.env
+
+# Local data + trained models
+data/
+parquet/
+models/
+cache/
+*.parquet
+*.pkl
+*.pt
+*.onnx
+
+# Docker / NIM
+nim-cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS junk
+.DS_Store

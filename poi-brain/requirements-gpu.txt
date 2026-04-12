@@ -1,0 +1,18 @@
+# GPU dependencies — install AFTER requirements-cpu.txt.
+# Requires an NVIDIA CUDA 12.x toolchain and access to pypi.nvidia.com.
+#
+# Recommended install (one command):
+#   pip install --extra-index-url=https://pypi.nvidia.com \
+#     cudf-cu12==25.4.* cuml-cu12==25.4.* cuspatial-cu12==25.4.* \
+#     cugraph-cu12==25.4.* xgboost
+#
+# If your CUDA is 11.x, swap *-cu12 for *-cu11.
+# If resolution is painful, use the official Docker image instead:
+#   docker run --gpus all --network host -it \
+#     -v $(pwd):/workspace/poi-brain \
+#     rapidsai/notebooks:25.04-cuda12.0-py3.11 bash
+
+cudf-cu12
+cuml-cu12
+cuspatial-cu12
+cugraph-cu12

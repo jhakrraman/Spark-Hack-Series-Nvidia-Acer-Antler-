@@ -1,0 +1,42 @@
+[project]
+name = "poi-brain"
+version = "0.1.0"
+description = "Person of Interest — predictive intelligence brain (RAPIDS + NIM)"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "httpx>=0.27.0",
+    "sodapy>=2.2.0",
+    "h3>=4.0.0",
+    "openai>=1.54.0",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "pyarrow>=17.0.0",
+    "python-multipart>=0.0.20",
+    "websockets>=13.0",
+    "sse-starlette>=2.1.0",
+    "apscheduler>=3.10.0",
+    "geopandas>=1.0.0",
+    "shapely>=2.0.0",
+]
+
+[project.optional-dependencies]
+# Install the RAPIDS stack matching your CUDA version separately, e.g.:
+#   pip install --extra-index-url=https://pypi.nvidia.com \
+#     cudf-cu12 cuml-cu12 cuspatial-cu12 cugraph-cu12
+# We DO NOT list them as hard deps because pip resolution on non-CUDA machines
+# (e.g. the laptop where code is written) would fail.
+rapids = []
+retrieval = ["faiss-cpu>=1.9.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
