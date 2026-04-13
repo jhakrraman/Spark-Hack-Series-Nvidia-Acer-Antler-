@@ -20,7 +20,7 @@ Nothing leaves the box. No cloud APIs. No compliance risk.
 **Pratham Saraf**  
 **Jay Daftari**  
 **Siddhant Mohan**  
-**Athul**
+**Athul Radhakrishnan**
 
 > *Improvements in health, safety, and economic opportunity for residents.*
 
