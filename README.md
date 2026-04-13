@@ -17,7 +17,7 @@ Nothing leaves the box. No cloud APIs. No compliance risk.
 
 ## Team Members:
 **Raman Jha**  
-**Pratham Saraf**  
+**Pratham Saraf**   
 **Jay Daftari**  
 **Siddhant Mohan**  
 **Athul Radhakrishnan**
