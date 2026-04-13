@@ -16,11 +16,11 @@ Nothing leaves the box. No cloud APIs. No compliance risk.
 ## Challenge track: Human Impact
 
 ## Team Members:
-Raman Jha
-Pratham Saraf
-Jay Daftari
-Siddhant Mohan
-Athul
+**Raman Jha  
+Pratham Saraf  
+Jay Daftari  
+Siddhant Mohan  
+Athul  **
 
 > *Improvements in health, safety, and economic opportunity for residents.*
 
